@@ -1,5 +1,5 @@
 TARGET = harbour-jscan
-VERSION = 0.1.0
+VERSION = 0.2.0
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"
 
 CONFIG += sailfishapp
@@ -34,13 +34,21 @@ SOURCES += \
     $$CORE/scanworker_sane.cpp \
     $$CORE/v600scanner.cpp
 
-LIBS += $$PWD/3rdparty/sane/lib/aarch64/libsane.a -lusb-1.0 -lpthread -lm -ldl
+# prebuilt SANE (canon_dr) and Tesseract per target architecture, see 3rdparty/README.md
+contains(QT_ARCH, arm64)|contains(QT_ARCH, aarch64) {
+    ARCH = aarch64
+} else:contains(QT_ARCH, arm) {
+    ARCH = armv7hl
+} else {
+    error("unsupported architecture $$QT_ARCH")
+}
+LIBS += $$PWD/3rdparty/sane/lib/$$ARCH/libsane.a -lusb-1.0 -lpthread -lm -ldl
 
 sane.files = sane/canon_dr.conf sane/dll.conf
 sane.path = /usr/share/$${TARGET}/sane
 udev.files = udev/65-harbour-jscan-canon.rules udev/65-harbour-jscan-epson-v600.rules
 udev.path = /lib/udev/rules.d
-ocrbin.files = 3rdparty/tesseract/aarch64/tesseract
+ocrbin.files = 3rdparty/tesseract/$$ARCH/tesseract
 ocrbin.path = /usr/share/$${TARGET}/bin
 ocrbin.CONFIG += executable
 ocrdata.files = tessdata/deu.traineddata tessdata/eng.traineddata tessdata/pdf.ttf
@@ -70,6 +78,7 @@ DISTFILES += \
     qml/pages/AboutPage.qml \
     qml/pages/SaveDialog.qml \
     qml/pages/InfoPage.qml \
+    qml/pages/AreaPage.qml \
     translations/harbour-jscan-de.ts \
     rpm/harbour-jscan.spec \
     harbour-jscan.desktop

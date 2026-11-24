@@ -6,7 +6,7 @@ Name:       harbour-jscan
 %{!?qtc_make:%define qtc_make make}
 %{?qtc_builddir:%define _builddir %qtc_builddir}
 Summary:    Document scanning for Canon P-215II, Epson V600 and eSCL network scanners
-Version:    0.1.0
+Version:    0.2.0
 Release:    1
 Group:      Qt/Qt
 License:    MIT and GPLv2+ and Apache-2.0 and BSD-2-Clause
@@ -15,6 +15,8 @@ Vendor:     reproducible-builder
 Packager:   harbour-jscan contributors
 Requires:   sailfishsilica-qt5 >= 0.10.9
 Requires:   libusb1
+# TIFF export
+Requires:   qt5-qtimageformats-plugin-tiff
 # the app was called "jscan" up to 0.1.0
 Obsoletes:  jscan <= 0.1.0
 BuildRequires:  pkgconfig(sailfishapp) >= 1.0.2

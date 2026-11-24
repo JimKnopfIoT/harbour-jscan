@@ -1,9 +1,10 @@
 #!/bin/bash
-# Builds a static tesseract (with static leptonica) for the Sailfish OS aarch64
+# Builds a static tesseract (with static leptonica) for a Sailfish OS
 # target inside the Platform SDK chroot. $1 = directory with leptonica/ and
 # tesseract/ source trees; result: $1/stage/bin/tesseract
 set -e
-T=SailfishOS-5.2.0.17-aarch64
+# target: $T (default SailfishOS-5.2.0.17-aarch64), e.g. T=SailfishOS-4.6.0.13-armv7hl
+T=${T:-SailfishOS-5.2.0.17-aarch64}
 cd "$1"
 STAGE="$PWD/stage"
 # keep build paths out of the binary

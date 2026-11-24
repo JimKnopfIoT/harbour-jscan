@@ -50,6 +50,86 @@
     </message>
 </context>
 <context>
+    <name>AreaPage</name>
+    <message>
+        <location filename="../qml/pages/AreaPage.qml" line="+63"/>
+        <location line="+319"/>
+        <source>Whole page</source>
+        <translation>Ganze Seite</translation>
+    </message>
+    <message>
+        <location line="-314"/>
+        <location line="+306"/>
+        <source>Cancel</source>
+        <translation>Abbrechen</translation>
+    </message>
+    <message>
+        <location line="-306"/>
+        <source>Preview scan</source>
+        <translation>Vorschau scannen</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>Scan area</source>
+        <translation>Scanbereich</translation>
+    </message>
+    <message>
+        <location line="+92"/>
+        <source>Tap “Preview” for a preview scan of the glass, then tap the part to scan or drag a frame around it.</source>
+        <translation>„Vorschau“ tippen für eine Vorschau des Vorlagenglases, dann auf den gewünschten Teil tippen oder einen Rahmen darum ziehen.</translation>
+    </message>
+    <message>
+        <location line="+145"/>
+        <source>Resolution</source>
+        <translation>Auflösung</translation>
+    </message>
+    <message>
+        <location line="+24"/>
+        <source>%1 × %2 mm at %3, %4 mm from the left and %5 mm from the top</source>
+        <translation>%1 × %2 mm mit %3, %4 mm von links und %5 mm von oben</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Whole page (A4) at %1</source>
+        <translation>Ganze Seite (A4) mit %1</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>%1 × %2 pixels, about %3 MB</source>
+        <translation>%1 × %2 Pixel, etwa %3 MB</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Too large for this resolution – choose a smaller area or a lower resolution.</source>
+        <translation>Zu groß für diese Auflösung – bitte einen kleineren Bereich oder eine niedrigere Auflösung wählen.</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Scan</source>
+        <translation>Scannen</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>%1 × %2 mm at %3</source>
+        <translation>%1 × %2 mm mit %3</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Whole page at %1</source>
+        <translation>Ganze Seite mit %1</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>Preview</source>
+        <translation>Vorschau</translation>
+    </message>
+    <message>
+        <location line="+19"/>
+        <source>Tap the preview to place a frame, drag inside it to move it and drag the corners to resize it. Without zoom, dragging outside draws a new frame; zoomed in, it moves the picture. Pinch or double-tap to zoom.</source>
+        <translation>In die Vorschau tippen setzt einen Rahmen, im Rahmen ziehen verschiebt ihn, an den Ecken ziehen ändert die Größe. Ohne Zoom zieht man außerhalb einen neuen Rahmen auf, mit Zoom verschiebt man so das Bild. Zoomen mit zwei Fingern oder Doppeltippen.</translation>
+    </message>
+</context>
+<context>
     <name>CoverPage</name>
     <message>
         <location filename="../qml/cover/CoverPage.qml" line="+21"/>
@@ -86,6 +166,11 @@
     </message>
     <message>
         <location line="+3"/>
+        <source>Save as TIFF</source>
+        <translation>Als TIFF speichern</translation>
+    </message>
+    <message>
+        <location line="+5"/>
         <source>Save as PNG</source>
         <translation>Als PNG speichern</translation>
     </message>
@@ -161,6 +246,26 @@
         <translation>Geraderichten</translation>
     </message>
     <message>
+        <location line="+56"/>
+        <source>Scan area</source>
+        <translation>Scanbereich</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>%1 × %2 mm</source>
+        <translation>%1 × %2 mm</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Whole page</source>
+        <translation>Ganze Seite</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Tap to preview and choose a part of the glass, e.g. for high resolutions</source>
+        <translation>Antippen für Vorschau und Auswahl eines Teils des Glases, z. B. für hohe Auflösungen</translation>
+    </message>
+    <message>
         <location line="+10"/>
         <source>Cancel</source>
         <translation>Abbrechen</translation>
@@ -189,7 +294,7 @@
 <context>
     <name>SaveDialog</name>
     <message>
-        <location filename="../qml/pages/SaveDialog.qml" line="+30"/>
+        <location filename="../qml/pages/SaveDialog.qml" line="+31"/>
         <source>Save to</source>
         <translation>Speichern in</translation>
     </message>
@@ -204,9 +309,14 @@
         <translation>Als PNG speichern</translation>
     </message>
     <message>
-        <location line="+0"/>
+        <location line="+1"/>
         <source>Save as PDF</source>
         <translation>Als PDF speichern</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Save as TIFF</source>
+        <translation>Als TIFF speichern</translation>
     </message>
     <message>
         <location line="+6"/>
@@ -221,11 +331,16 @@
     </message>
     <message>
         <location line="+10"/>
-        <source>One file per page: %1_01.png, %1_02.png, …</source>
-        <translation>Eine Datei pro Seite: %1_01.png, %1_02.png, …</translation>
+        <source>One file per page: %1_01%2, %1_02%2, …</source>
+        <translation>Eine Datei pro Seite: %1_01%2, %1_02%2, …</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+10"/>
+        <source>Unprocessed scan data as scanned (only rotated): contrast, background and colour settings are not applied. For photo software.</source>
+        <translation>Unbearbeitete Scandaten (nur gedreht): Kontrast, Hintergrund und Farbeinstellungen werden nicht angewendet. Für Fotoprogramme.</translation>
+    </message>
+    <message>
+        <location line="+5"/>
         <source>Folder</source>
         <translation>Ordner</translation>
     </message>
@@ -389,7 +504,7 @@
     </message>
     <message>
         <location line="+4"/>
-        <location filename="../core/v600scanner.cpp" line="+662"/>
+        <location filename="../core/v600scanner.cpp" line="+663"/>
         <source>Waiting for the scanner …</source>
         <translation>Warte auf den Scanner …</translation>
     </message>
@@ -397,8 +512,8 @@
         <location line="+4"/>
         <location line="+45"/>
         <location filename="../core/scanworker_sane.cpp" line="+565"/>
-        <location filename="../core/v600scanner.cpp" line="-119"/>
-        <location filename="../src/scancontroller.cpp" line="+390"/>
+        <location filename="../core/v600scanner.cpp" line="-120"/>
+        <location filename="../src/scancontroller.cpp" line="+454"/>
         <source>Cancelled.</source>
         <translation>Abgebrochen.</translation>
     </message>
@@ -418,7 +533,7 @@
     <message>
         <location line="+1"/>
         <location filename="../core/scanworker_sane.cpp" line="+1"/>
-        <location filename="../core/v600scanner.cpp" line="+392"/>
+        <location filename="../core/v600scanner.cpp" line="+393"/>
         <source>Scanning document …</source>
         <translation>Scanne Vorlage …</translation>
     </message>
@@ -516,7 +631,7 @@
     </message>
     <message>
         <location line="+1"/>
-        <location filename="../core/v600scanner.cpp" line="-621"/>
+        <location filename="../core/v600scanner.cpp" line="-622"/>
         <source>The scanner is busy.</source>
         <translation>Scanner ist belegt.</translation>
     </message>
@@ -559,7 +674,7 @@
     </message>
     <message>
         <location line="+4"/>
-        <location filename="../core/v600scanner.cpp" line="+324"/>
+        <location filename="../core/v600scanner.cpp" line="+325"/>
         <source>Connecting to the scanner …</source>
         <translation>Verbinde mit Scanner …</translation>
     </message>
@@ -590,7 +705,7 @@
         <translation>Bildformat des Scanners wird nicht unterstützt.</translation>
     </message>
     <message>
-        <location filename="../src/scancontroller.cpp" line="-370"/>
+        <location filename="../src/scancontroller.cpp" line="-434"/>
         <source>Feeder – duplex</source>
         <translation>Einzug – beidseitig</translation>
     </message>
@@ -625,7 +740,7 @@
         <translation>Kartenschlitz – beidseitig</translation>
     </message>
     <message>
-        <location line="+76"/>
+        <location line="+77"/>
         <source>Network scanner (%1)</source>
         <translation>Netzwerkscanner (%1)</translation>
     </message>
@@ -635,7 +750,7 @@
         <translation>Kein Scanner gefunden</translation>
     </message>
     <message>
-        <location line="+53"/>
+        <location line="+64"/>
         <source>Ready: %1</source>
         <translation>Bereit: %1</translation>
     </message>
@@ -650,12 +765,17 @@
         <translation>Blätter in den Einzug legen und „Scannen“ tippen.</translation>
     </message>
     <message>
-        <location line="+124"/>
+        <location line="+170"/>
         <source>Cancelling …</source>
         <translation>Wird abgebrochen …</translation>
     </message>
     <message>
-        <location line="+52"/>
+        <location line="+49"/>
+        <source>Preview ready – choose the area</source>
+        <translation>Vorschau fertig – Bereich wählen</translation>
+    </message>
+    <message>
+        <location line="+9"/>
         <source>One page scanned</source>
         <translation>Eine Seite gescannt</translation>
     </message>
@@ -675,12 +795,12 @@
         <translation>, %1 leere entfernt</translation>
     </message>
     <message>
-        <location line="+181"/>
+        <location line="+183"/>
         <source>Ready</source>
         <translation>Bereit</translation>
     </message>
     <message>
-        <location line="+81"/>
+        <location line="+89"/>
         <source>Could not create the folder %1.</source>
         <translation>Der Ordner %1 konnte nicht angelegt werden.</translation>
     </message>
@@ -690,7 +810,7 @@
         <translation>Speichere …</translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+20"/>
         <source>Could not write %1.</source>
         <translation>Konnte %1 nicht schreiben.</translation>
     </message>
@@ -706,11 +826,11 @@
     </message>
     <message>
         <location line="+2"/>
-        <source>%1 PNG files</source>
-        <translation>%1 PNG-Dateien</translation>
+        <source>%1 files</source>
+        <translation>%1 Dateien</translation>
     </message>
     <message>
-        <location filename="../core/v600scanner.cpp" line="-773"/>
+        <location filename="../core/v600scanner.cpp" line="-774"/>
         <source>Cannot read the firmware file %1.</source>
         <translation>Die Firmware-Datei %1 kann nicht gelesen werden.</translation>
     </message>
@@ -767,7 +887,7 @@ Bezugsquellen: Fedora-Paket „iscan-firmware“, AUR-Paket „iscan-plugin-gt-x
         <translation>Die Epson-Firmware-Datei %1 fehlt.</translation>
     </message>
     <message>
-        <location line="+46"/>
+        <location line="+47"/>
         <source>The scan area is empty.</source>
         <translation>Der Scanbereich ist leer.</translation>
     </message>

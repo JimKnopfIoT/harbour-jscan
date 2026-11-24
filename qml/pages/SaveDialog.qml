@@ -8,15 +8,16 @@ Dialog {
     id: dialog
     allowedOrientations: Orientation.All
 
-    property bool png: false
+    property int format: 0   // 0 PDF, 1 PNG, 2 TIFF (unprocessed scan data)
+    readonly property bool pdf: format === 0
     property string folder: scanner.saveFolder
 
-    readonly property string extension: png ? ".png" : ".pdf"
-    readonly property bool exists: scanner.fileExists(folder, nameField.text, png)
+    readonly property string extension: format === 1 ? ".png" : format === 2 ? ".tif" : ".pdf"
+    readonly property bool exists: scanner.fileExists(folder, nameField.text, format)
 
     canAccept: nameField.text.trim().length > 0
 
-    onAccepted: scanner.saveAs(png, folder, nameField.text)
+    onAccepted: scanner.saveAs(format, folder, nameField.text)
 
     function shortPath(p) {
         return p.replace(/^\/home\/[^\/]+/, "~")
@@ -42,7 +43,8 @@ Dialog {
 
             DialogHeader {
                 acceptText: qsTr("Save")
-                title: png ? qsTr("Save as PNG") : qsTr("Save as PDF")
+                title: format === 1 ? qsTr("Save as PNG")
+                     : format === 2 ? qsTr("Save as TIFF") : qsTr("Save as PDF")
             }
 
             TextField {
@@ -71,11 +73,22 @@ Dialog {
             Label {
                 x: Theme.horizontalPageMargin
                 width: parent.width - 2 * Theme.horizontalPageMargin
-                visible: png && scanner.pageCount > 1
+                visible: !pdf && scanner.pageCount > 1
                 wrapMode: Text.Wrap
                 font.pixelSize: Theme.fontSizeExtraSmall
                 color: Theme.secondaryColor
-                text: qsTr("One file per page: %1_01.png, %1_02.png, …").arg(nameField.text.trim())
+                text: qsTr("One file per page: %1_01%2, %1_02%2, …").arg(nameField.text.trim()).arg(dialog.extension)
+            }
+
+            Label {
+                x: Theme.horizontalPageMargin
+                width: parent.width - 2 * Theme.horizontalPageMargin
+                visible: format === 2
+                wrapMode: Text.Wrap
+                font.pixelSize: Theme.fontSizeExtraSmall
+                color: Theme.secondaryColor
+                text: qsTr("Unprocessed scan data as scanned (only rotated): contrast, background "
+                           + "and colour settings are not applied. For photo software.")
             }
 
             ValueButton {
@@ -86,12 +99,12 @@ Dialog {
             }
 
             SectionHeader {
-                visible: !png
+                visible: pdf
                 text: qsTr("PDF")
             }
 
             TextSwitch {
-                visible: !png
+                visible: pdf
                 text: qsTr("Compress PDF")
                 description: qsTr("JPEG instead of lossless – much smaller files")
                 checked: scanner.compress
@@ -99,7 +112,7 @@ Dialog {
             }
 
             TextSwitch {
-                visible: !png
+                visible: pdf
                 text: qsTr("Searchable (text recognition)")
                 description: scanner.ocrAvailable
                              ? qsTr("PDF with invisible text layer (German and English)")

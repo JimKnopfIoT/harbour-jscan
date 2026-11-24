@@ -1,4 +1,6 @@
-# mb2 builds in place
+# mb2 builds (in place or in build-<arch>/)
+/build-*/
+/build-*.log
 *.o
 moc_*.cpp
 /Makefile

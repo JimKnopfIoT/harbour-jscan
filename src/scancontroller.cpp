@@ -52,6 +52,7 @@ ScanController::ScanController(QObject *parent) : QObject(parent)
     connect(m_worker, &ScanWorker::capsReady, this, &ScanController::onCaps);
     connect(m_worker, &ScanWorker::pageScanned, this, &ScanController::onPage);
     connect(m_worker, &ScanWorker::pageProgress, this, &ScanController::onProgress);
+    connect(m_worker, &ScanWorker::previewReady, this, &ScanController::onPreview);
     connect(m_worker, &ScanWorker::finished, this, &ScanController::onFinished);
     connect(m_worker, &ScanWorker::notice, this, &ScanController::notice);
     m_thread.start();
@@ -151,7 +152,18 @@ void ScanController::onCaps(const DeviceCaps &caps, const QString &err)
         setStatus(err);
         return;
     }
+    const bool otherDevice = caps.device != m_caps.device;
     m_caps = caps;
+    if (otherDevice) {   // area and preview belong to the previous scanner
+        m_areaMm = QRectF();
+        {
+            QMutexLocker lock(&m_mutex);
+            m_preview = QImage();
+        }
+        m_previewUrl.clear();
+        emit scanAreaChanged();
+        emit previewChanged();
+    }
 
     QSettings st;
     st.beginGroup(QStringLiteral("devices/") + m_devices[m_deviceIndex].key);
@@ -330,10 +342,56 @@ void ScanController::scan()
                                                               : m_caps.modes.value(0);
     s.dpi = m_dpiIndex < m_caps.resolutions.size() ? m_caps.resolutions[m_dpiIndex] : 300;
     s.paperMm = QSizeF(210.0, 297.0);
+    if (!feeder() && !m_areaMm.isEmpty())
+        s.areaMm = m_areaMm;
     s.deskew = m_ps.deskew;
     m_skipped = 0;
+    m_previewRun = false;
     setState(Scanning);
     QMetaObject::invokeMethod(m_worker, "scan", Qt::QueuedConnection, Q_ARG(ScanSettings, s));
+}
+
+void ScanController::preview()
+{
+    if (!ready() || feeder())
+        return;
+    ScanSettings s;
+    s.device = m_caps.device;
+    s.source = m_sourceIndex < m_caps.sources.size() ? m_caps.sources[m_sourceIndex] : QString();
+    s.mode = QStringLiteral("Color");
+    s.preview = true;
+    m_previewRun = true;
+    setState(Scanning);
+    QMetaObject::invokeMethod(m_worker, "scan", Qt::QueuedConnection, Q_ARG(ScanSettings, s));
+}
+
+void ScanController::onPreview(const QImage &img)
+{
+    {
+        QMutexLocker lock(&m_mutex);
+        m_preview = img;
+    }
+    m_previewUrl = QStringLiteral("image://jscan/preview/%1").arg(++m_previewSerial);
+    emit previewChanged();
+}
+
+QSizeF ScanController::glassSize() const
+{
+    return !m_caps.flatbedMm.isEmpty() ? m_caps.flatbedMm : m_caps.maxMm;
+}
+
+void ScanController::setScanArea(const QRectF &mmIn)
+{
+    QRectF mm = mmIn.normalized();
+    const QSizeF glass = glassSize();
+    if (!mm.isEmpty() && glass.isValid())
+        mm = mm.intersected(QRectF(QPointF(0, 0), glass));
+    if (mm.width() < 1 || mm.height() < 1)
+        mm = QRectF();
+    if (mm == m_areaMm)
+        return;
+    m_areaMm = mm;
+    emit scanAreaChanged();
 }
 
 void ScanController::cancel()
@@ -378,6 +436,8 @@ void ScanController::onPage(const QImage &img)
 
 void ScanController::onFinished(int pages, const QString &err)
 {
+    const bool wasPreview = m_previewRun;
+    m_previewRun = false;
     setState(Idle);
     {
         QMutexLocker lock(&m_mutex);
@@ -385,6 +445,10 @@ void ScanController::onFinished(int pages, const QString &err)
     }
     m_liveUrl.clear();
     emit liveImageChanged();
+    if (wasPreview && err.isEmpty()) {
+        setStatus(QCoreApplication::translate("jScan", "Preview ready – choose the area"));
+        return;
+    }
     if (!err.isEmpty() && pages == 0) {
         setStatus(err);
         if (err != QCoreApplication::translate("jScan", "Cancelled."))
@@ -498,6 +562,8 @@ QImage ScanController::image(const QString &id, const QSize &requested)
         const QStringList parts = id.split(QLatin1Char('/'));
         if (parts.value(0) == QLatin1String("live")) {
             img = m_live;
+        } else if (parts.value(0) == QLatin1String("preview")) {
+            img = m_preview;
         } else if (parts.value(0) == QLatin1String("page")) {
             const int idx = indexOfId(parts.value(1).toInt());
             if (idx >= 0)
@@ -589,15 +655,21 @@ QString defaultSaveFolder()
            + QStringLiteral("/Scans");
 }
 
+QString extensionOf(int format)
+{
+    return format == 1 ? QStringLiteral(".png") : format == 2 ? QStringLiteral(".tif")
+                                                              : QStringLiteral(".pdf");
+}
+
 // File name as typed by the user: no path separators, no extension.
-QString cleanFileName(QString name, bool png)
+QString cleanFileName(QString name, int format)
 {
     name = name.trimmed();
     name.replace(QLatin1Char('/'), QLatin1Char('_'));
     name.remove(QChar(0));
-    const QString ext = png ? QStringLiteral(".png") : QStringLiteral(".pdf");
-    if (name.endsWith(ext, Qt::CaseInsensitive))
-        name.chop(ext.size());
+    for (const QString &ext : {extensionOf(format), QStringLiteral(".tiff")})
+        if (name.endsWith(ext, Qt::CaseInsensitive))
+            name.chop(ext.size());
     return name.trimmed();
 }
 
@@ -614,29 +686,31 @@ QString ScanController::defaultFileName() const
            + QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd_HH-mm-ss"));
 }
 
-bool ScanController::fileExists(const QString &folder, const QString &name, bool png) const
+bool ScanController::fileExists(const QString &folder, const QString &name, int format) const
 {
-    const QString n = cleanFileName(name, png);
+    const QString n = cleanFileName(name, format);
     if (n.isEmpty())
         return false;
     const QString base = folder + QLatin1Char('/') + n;
-    if (!png)
-        return QFileInfo::exists(base + QStringLiteral(".pdf"));
-    return pageCount() == 1 ? QFileInfo::exists(base + QStringLiteral(".png"))
-                            : QFileInfo::exists(base + QStringLiteral("_01.png"));
+    const QString ext = extensionOf(format);
+    if (format == 0)
+        return QFileInfo::exists(base + ext);
+    return pageCount() == 1 ? QFileInfo::exists(base + ext)
+                            : QFileInfo::exists(base + QStringLiteral("_01") + ext);
 }
 
-void ScanController::save(bool png)
+void ScanController::save(int format)
 {
-    saveAs(png, saveFolder(), defaultFileName());
+    saveAs(format, saveFolder(), defaultFileName());
 }
 
-void ScanController::saveAs(bool png, const QString &folderIn, const QString &nameIn)
+void ScanController::saveAs(int format, const QString &folderIn, const QString &nameIn)
 {
     if (m_state != Idle || pageCount() == 0)
         return;
+    const bool png = format == 1, tiff = format == 2;
     const QString folder = folderIn.isEmpty() ? saveFolder() : QDir::cleanPath(folderIn);
-    QString name = cleanFileName(nameIn, png);
+    QString name = cleanFileName(nameIn, format);
     if (name.isEmpty())
         name = defaultFileName();
     if (folder != saveFolder()) {
@@ -667,18 +741,22 @@ void ScanController::saveAs(bool png, const QString &folderIn, const QString &na
     setState(Saving);
     setStatus(QCoreApplication::translate("jScan", "Saving …"));
 
-    QtConcurrent::run([this, pages, raws, pss, dirty, base, png, opt]() mutable {
-        for (int i = 0; i < pages.size(); ++i)
-            if (dirty[i])
-                pages[i] = ImageOps::process(raws[i], pss[i]);
+    QtConcurrent::run([this, pages, raws, pss, dirty, base, png, tiff, opt]() mutable {
+        if (tiff)   // unprocessed scan data (rotation applied), e.g. for photo software
+            pages = raws;
+        else
+            for (int i = 0; i < pages.size(); ++i)
+                if (dirty[i])
+                    pages[i] = ImageOps::process(raws[i], pss[i]);
         QStringList files;
         QString err;
-        if (png) {
+        if (png || tiff) {
+            const QString ext = tiff ? QStringLiteral(".tif") : QStringLiteral(".png");
             for (int i = 0; i < pages.size() && err.isEmpty(); ++i) {
                 const QString f = pages.size() == 1
-                                      ? base + QStringLiteral(".png")
-                                      : QStringLiteral("%1_%2.png").arg(base).arg(i + 1, 2, 10, QLatin1Char('0'));
-                if (pages[i].save(f, "PNG"))
+                                      ? base + ext
+                                      : QStringLiteral("%1_%2%3").arg(base).arg(i + 1, 2, 10, QLatin1Char('0')).arg(ext);
+                if (pages[i].save(f, tiff ? "TIFF" : "PNG"))
                     files << f;
                 else
                     err = QCoreApplication::translate("jScan", "Could not write %1.").arg(f);
@@ -714,7 +792,7 @@ void ScanController::onSaveDone(const QStringList &files, const QString &err)
         bytes += QFileInfo(f).size();
     setStatus(QCoreApplication::translate("jScan", "Saved: %1 (%2 MB)")
                   .arg(files.size() == 1 ? QFileInfo(files.first()).fileName()
-                                         : QCoreApplication::translate("jScan", "%1 PNG files").arg(files.size()))
+                                         : QCoreApplication::translate("jScan", "%1 files").arg(files.size()))
                   .arg(bytes / 1048576.0, 0, 'f', 1));
     emit saved(files.value(0));
 }

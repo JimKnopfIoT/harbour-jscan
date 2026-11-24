@@ -34,14 +34,19 @@ Page {
                 onClicked: remorse.execute(qsTr("Discarding pages"), function() { scanner.clearPages() })
             }
             MenuItem {
+                text: qsTr("Save as TIFF")
+                enabled: scanner.pageCount > 0 && !scanner.busy
+                onClicked: pageStack.push(Qt.resolvedUrl("SaveDialog.qml"), { format: 2 })
+            }
+            MenuItem {
                 text: qsTr("Save as PNG")
                 enabled: scanner.pageCount > 0 && !scanner.busy
-                onClicked: pageStack.push(Qt.resolvedUrl("SaveDialog.qml"), { png: true })
+                onClicked: pageStack.push(Qt.resolvedUrl("SaveDialog.qml"), { format: 1 })
             }
             MenuItem {
                 text: qsTr("Save as PDF")
                 enabled: scanner.pageCount > 0 && !scanner.busy
-                onClicked: pageStack.push(Qt.resolvedUrl("SaveDialog.qml"), { png: false })
+                onClicked: pageStack.push(Qt.resolvedUrl("SaveDialog.qml"), { format: 0 })
             }
         }
 
@@ -247,6 +252,79 @@ Page {
                 text: qsTr("Deskew")
                 checked: scanner.deskew
                 onCheckedChanged: scanner.deskew = checked
+            }
+
+            // flatbed: preview of the glass with the chosen scan area
+            BackgroundItem {
+                id: areaItem
+                visible: !scanner.feeder && scanner.glassSize.width > 0
+                width: parent.width
+                height: Math.max(areaThumb.height, areaText.height) + 2 * Theme.paddingMedium
+                onClicked: pageStack.push(Qt.resolvedUrl("AreaPage.qml"))
+
+                readonly property real gw: scanner.glassSize.width > 0 ? scanner.glassSize.width : 215.9
+                readonly property real gh: scanner.glassSize.height > 0 ? scanner.glassSize.height : 297.18
+                readonly property bool hasArea: scanner.scanArea.width > 0
+
+                Rectangle {
+                    id: areaThumb
+                    x: Theme.horizontalPageMargin
+                    anchors.verticalCenter: parent.verticalCenter
+                    height: Theme.itemSizeExtraLarge * 1.2
+                    width: height * areaItem.gw / areaItem.gh
+                    color: Qt.rgba(1, 1, 1, 0.06)
+                    border.width: 1
+                    border.color: Qt.rgba(1, 1, 1, 0.25)
+
+                    Image {
+                        anchors.fill: parent
+                        fillMode: Image.Stretch
+                        asynchronous: true
+                        cache: false
+                        source: scanner.previewImage
+                        sourceSize.height: parent.height * 2
+                    }
+                    Rectangle {
+                        visible: areaItem.hasArea
+                        x: scanner.scanArea.x / areaItem.gw * parent.width
+                        y: scanner.scanArea.y / areaItem.gh * parent.height
+                        width: Math.max(2, scanner.scanArea.width / areaItem.gw * parent.width)
+                        height: Math.max(2, scanner.scanArea.height / areaItem.gh * parent.height)
+                        color: Qt.rgba(1, 0.54, 0, 0.2)
+                        border.width: 2
+                        border.color: "#ff8a00"
+                    }
+                }
+
+                Column {
+                    id: areaText
+                    anchors {
+                        left: areaThumb.right; leftMargin: Theme.paddingLarge
+                        right: parent.right; rightMargin: Theme.horizontalPageMargin
+                        verticalCenter: parent.verticalCenter
+                    }
+                    Label {
+                        width: parent.width
+                        text: qsTr("Scan area")
+                        color: areaItem.highlighted ? Theme.highlightColor : Theme.primaryColor
+                    }
+                    Label {
+                        width: parent.width
+                        wrapMode: Text.Wrap
+                        color: Theme.highlightColor
+                        text: areaItem.hasArea
+                              ? qsTr("%1 × %2 mm").arg(Math.round(scanner.scanArea.width * 10) / 10)
+                                                  .arg(Math.round(scanner.scanArea.height * 10) / 10)
+                              : qsTr("Whole page")
+                    }
+                    Label {
+                        width: parent.width
+                        wrapMode: Text.Wrap
+                        font.pixelSize: Theme.fontSizeExtraSmall
+                        color: Theme.secondaryColor
+                        text: qsTr("Tap to preview and choose a part of the glass, e.g. for high resolutions")
+                    }
+                }
             }
 
             ScanTile {

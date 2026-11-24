@@ -15,6 +15,11 @@ The user interface is in English and German.
 ## Features
 
 - Sheet feeder (simplex/duplex) and flatbed, resolution per scanner.
+- Flatbed: preview scan of the glass and a freely placed scan area (move,
+  resize, zoom in for small areas), with the resulting size in pixels and
+  MB – e.g. for a small detail at 3200 or 6400 dpi with the Epson V600. The
+  area can be scanned right from the area page; the main page shows the
+  preview with the chosen area.
 - Own eSCL client that waits out network scanners which are briefly busy
   or drop off Wi-Fi for a moment.
 - Per page after scanning: color / grayscale / black and white, contrast,
@@ -22,7 +27,9 @@ The user interface is in English and German.
   rotate, reorder, delete.
 - Blank pages can be removed automatically when using the feeder.
 - Saving with a dialog for file name and folder; PDF lossless or
-  JPEG-compressed; searchable PDF (German and English text recognition).
+  JPEG-compressed; searchable PDF (German and English text recognition);
+  PNG; TIFF with the unprocessed scan data (8 bit), e.g. for photo
+  software.
 
 ## Tested devices
 
@@ -79,7 +86,14 @@ copy it to the phone, e.g.
 
 ## Installation and USB access
 
-Sailfish OS 5.2, aarch64. The package contains a statically linked SANE
+Two packages are built:
+
+- **aarch64** for Sailfish OS 5.2 (current devices, e.g. Jolla C2, Xperia 10
+  series on 5.x)
+- **armv7hl** for Sailfish OS 4.6 (older 32-bit devices, e.g. Jolla C,
+  Xperia X, Xperia XA2 with the 32-bit image)
+
+The package contains a statically linked SANE
 `canon_dr` backend and a Tesseract binary with German and English language
 data, so nothing else needs to be installed.
 
@@ -93,9 +107,17 @@ settings.
 
 ## Building
 
-With the Sailfish OS Platform SDK:
+With the Sailfish OS Platform SDK, one build directory per target:
 
-    mb2 -t SailfishOS-5.2.0.17-aarch64 build
+    mkdir build-aarch64 && cd build-aarch64
+    mb2 -t SailfishOS-5.2.0.17-aarch64 build ..
+    cd .. && mkdir build-armv7hl && cd build-armv7hl
+    mb2 -t SailfishOS-4.6.0.13-armv7hl build ..
+
+The packages end up in `build-<arch>/RPMS/`.
+
+The prebuilt SANE and Tesseract binaries for both architectures are in
+`3rdparty/`; the build picks the right ones.
 
 How the bundled SANE and Tesseract binaries were built is described in
 `3rdparty/README.md`.

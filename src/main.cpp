@@ -6,6 +6,9 @@
 #include <QQmlContext>
 #include <QQmlEngine>
 #include <QDir>
+#include <QDirIterator>
+#include <QQmlComponent>
+#include <cstdio>
 #include <QFile>
 #include <QFileInfo>
 #include <QQuickView>
@@ -28,6 +31,26 @@ static void migrateSettings()
         now.setValue(key, oldSettings.value(key));
 }
 
+// Development aid: `harbour-jscan --check-qml` compiles all QML files of the
+// installed app with the device's QML engine and reports errors (exit 1).
+static int checkQml(QQmlEngine *engine)
+{
+    int errors = 0;
+    QDirIterator it(SailfishApp::pathTo(QStringLiteral("qml")).toLocalFile(),
+                    QStringList{QStringLiteral("*.qml")}, QDir::Files, QDirIterator::Subdirectories);
+    while (it.hasNext()) {
+        const QString file = it.next();
+        QQmlComponent c(engine, QUrl::fromLocalFile(file));
+        if (c.isError()) {
+            ++errors;
+            std::fprintf(stderr, "ERROR %s\n%s\n", qPrintable(file), qPrintable(c.errorString()));
+        } else {
+            std::fprintf(stderr, "ok    %s\n", qPrintable(file));
+        }
+    }
+    return errors ? 1 : 0;
+}
+
 int main(int argc, char *argv[])
 {
     // the statically linked SANE (canon_dr) reads its device list from here
@@ -47,6 +70,12 @@ int main(int argc, char *argv[])
     qRegisterMetaType<DeviceCaps>();
 
     ScanController controller;
+
+    if (app->arguments().contains(QStringLiteral("--check-qml"))) {
+        QScopedPointer<QQuickView> view(SailfishApp::createView());
+        view->rootContext()->setContextProperty(QStringLiteral("scanner"), &controller);
+        return checkQml(view->engine());
+    }
 
     QScopedPointer<QQuickView> view(SailfishApp::createView());
     view->engine()->addImageProvider(QStringLiteral("jscan"), new PageImageProvider(&controller));

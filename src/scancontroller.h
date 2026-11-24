@@ -45,6 +45,11 @@ class ScanController : public QObject
     Q_PROPERTY(QString currentImage READ currentImage NOTIFY currentImageChanged)
     Q_PROPERTY(QString liveImage READ liveImage NOTIFY liveImageChanged)
     Q_PROPERTY(QString saveFolder READ saveFolder NOTIFY saveFolderChanged)
+    // flatbed scan area (mm from the top left of the glass); empty = whole page
+    Q_PROPERTY(QRectF scanArea READ scanArea WRITE setScanArea NOTIFY scanAreaChanged)
+    Q_PROPERTY(QSizeF glassSize READ glassSize NOTIFY capsChanged)
+    Q_PROPERTY(QString previewImage READ previewImage NOTIFY previewChanged)
+    Q_PROPERTY(bool previewing READ previewing NOTIFY stateChanged)
 
 public:
     explicit ScanController(QObject *parent = nullptr);
@@ -91,19 +96,28 @@ public:
     QString currentImage() const;
     QString liveImage() const { return m_liveUrl; }
     QString saveFolder() const;
+    QRectF scanArea() const { return m_areaMm; }
+    void setScanArea(const QRectF &mm);
+    QSizeF glassSize() const;
+    QString previewImage() const { return m_previewUrl; }
+    bool previewing() const { return m_state == Scanning && m_previewRun; }
 
     // for the image provider (any thread)
     QImage image(const QString &id, const QSize &requested);
 
     Q_INVOKABLE void refreshDevices();
     Q_INVOKABLE void scan();
+    // quick low-resolution scan of the whole glass for choosing the area
+    Q_INVOKABLE void preview();
+    Q_INVOKABLE void resetScanArea() { setScanArea(QRectF()); }
     Q_INVOKABLE void cancel();
-    Q_INVOKABLE void save(bool png);
+    // format: 0 PDF, 1 PNG (adjusted pages), 2 TIFF (unprocessed scan data)
+    Q_INVOKABLE void save(int format);
     // Save dialog: suggested name (without extension), check for an existing
     // file, save under the chosen folder/name (the folder is remembered).
     Q_INVOKABLE QString defaultFileName() const;
-    Q_INVOKABLE bool fileExists(const QString &folder, const QString &name, bool png) const;
-    Q_INVOKABLE void saveAs(bool png, const QString &folder, const QString &name);
+    Q_INVOKABLE bool fileExists(const QString &folder, const QString &name, int format) const;
+    Q_INVOKABLE void saveAs(int format, const QString &folder, const QString &name);
     Q_INVOKABLE void rotatePage(int index, int degrees);
     Q_INVOKABLE void removePage(int index);
     Q_INVOKABLE void movePage(int from, int to);
@@ -123,6 +137,8 @@ signals:
     void liveImageChanged();
     void saved(const QString &path);
     void saveFolderChanged();
+    void scanAreaChanged();
+    void previewChanged();
     // something the user has to do (e.g. missing firmware): shown on a page
     void notice(const QString &title, const QString &text);
     void error(const QString &message);
@@ -131,6 +147,7 @@ private slots:
     void onDevices(const QList<ScanDevice> &devices);
     void onCaps(const DeviceCaps &caps, const QString &error);
     void onPage(const QImage &img);
+    void onPreview(const QImage &img);
     void onProgress(const QImage &partial, int expectedHeight);
     void onFinished(int pages, const QString &error);
     void onProcessed(int id, quint64 gen, const QImage &img);
@@ -177,6 +194,11 @@ private:
     bool m_ocr = true;
     QString m_networkHost;
     QString m_saveFolder;
+    QRectF m_areaMm;
+    bool m_previewRun = false;
+    QImage m_preview;              // guarded by m_mutex
+    QString m_previewUrl;
+    int m_previewSerial = 0;
 
     mutable QMutex m_mutex;        // guards m_pages and m_live (image provider thread)
     QList<Page> m_pages;
