@@ -1,0 +1,14 @@
+# mb2 builds in place
+*.o
+moc_*.cpp
+/Makefile
+/harbour-jscan
+/build.log
+/documentation.list
+/installroot/
+/RPMS/
+/.mb2/
+/translations/*.qm
+
+# never: scanner firmware (Epson's property)
+esfwA1.bin
