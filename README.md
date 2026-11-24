@@ -37,6 +37,7 @@ The user interface is in English and German.
 |---|---|
 | Canon imageFORMULA P-215II | USB OTG (SANE `canon_dr`, statically linked) |
 | Epson Perfection V600 Photo | USB OTG (own driver, needs Epson's firmware file) |
+| HP OfficeJet Pro 8130e | Network (eSCL) |
 | Brother MFC-L2827DW | Network (eSCL) |
 | Brother multifunction printer (model not reported) | Network (eSCL) |
 
