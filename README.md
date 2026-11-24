@@ -31,6 +31,26 @@ The user interface is in English and German.
   PNG; TIFF with the unprocessed scan data (8 bit), e.g. for photo
   software.
 
+## Screenshots
+
+Epson Perfection V600 Photo via USB OTG: preview, a 40 × 22 mm detail
+scanned at 6400 dpi, saved as PDF.
+
+<table>
+<tr>
+<td align="center" valign="top"><img src="screenshots/1-settings.jpg" width="190" alt="Settings: USB and network scanners"><br><sub>Settings: USB and network scanners</sub></td>
+<td align="center" valign="top"><img src="screenshots/2-main.jpg" width="190" alt="Scanned page"><br><sub>Scanned page</sub></td>
+<td align="center" valign="top"><img src="screenshots/3-scan-options.jpg" width="190" alt="Per-page adjustments and scan area"><br><sub>Per-page adjustments and scan area</sub></td>
+<td align="center" valign="top"><img src="screenshots/4-area-page.jpg" width="190" alt="Scan area: a small detail at 6400 dpi"><br><sub>Scan area: a small detail at 6400 dpi</sub></td>
+</tr>
+<tr>
+<td align="center" valign="top"><img src="screenshots/5-detail-page.jpg" width="190" alt="The detail as second page"><br><sub>The detail as second page</sub></td>
+<td align="center" valign="top"><img src="screenshots/6-menu.jpg" width="190" alt="Saving as PDF, PNG or TIFF"><br><sub>Saving as PDF, PNG or TIFF</sub></td>
+<td align="center" valign="top"><img src="screenshots/7-save-dialog.jpg" width="190" alt="File name and folder"><br><sub>File name and folder</sub></td>
+<td align="center" valign="top"><img src="screenshots/8-saved.jpg" width="190" alt="Saved"><br><sub>Saved</sub></td>
+</tr>
+</table>
+
 ## Tested devices
 
 | Device | Connection |
