@@ -60,6 +60,7 @@ scanned at 6400 dpi, saved as PDF.
 | HP OfficeJet Pro 8130e | Network (eSCL) |
 | Epson WorkForce WF-2950 | Network (eSCL) |
 | Brother MFC-L2827DW | Network (eSCL) |
+| Kyocera ECOSYS M5521cdw | Network (eSCL) |
 | Brother multifunction printer (model not reported) | Network (eSCL) |
 
 Network scanners are not discovered automatically on the phone: enter the
