@@ -177,6 +177,7 @@ private:
     QThread m_thread;
     ScanWorker *m_worker = nullptr;
     State m_state = Idle;
+    bool m_refreshPending = false;
     QString m_status;
 
     QList<ScanDevice> m_devices;

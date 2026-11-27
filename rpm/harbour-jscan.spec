@@ -6,10 +6,11 @@ Name:       harbour-jscan
 %{!?qtc_make:%define qtc_make make}
 %{?qtc_builddir:%define _builddir %qtc_builddir}
 Summary:    Document scanning for Canon P-215II, Epson V600 and eSCL network scanners
-Version:    0.2.0
+Version:    0.2.1
 Release:    1
 Group:      Qt/Qt
 License:    MIT and GPLv2+ and Apache-2.0 and BSD-2-Clause
+URL:        https://github.com/JimKnopfIoT/harbour-jscan
 Source0:    %{name}-%{version}.tar.bz2
 Vendor:     reproducible-builder
 Packager:   harbour-jscan contributors

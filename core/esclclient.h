@@ -16,7 +16,9 @@
 // All calls are blocking and must run in the scan worker thread.
 namespace Escl {
 
-// SANE-style device name for a base URL, e.g. "escl:https://192.168.10.29:443".
+// Device name: "escl:" + a base URL, e.g. "escl:https://192.168.1.20:443",
+// or "escl:" + an address as typed in the settings ("192.168.1.20",
+// "192.168.1.20:9095"); queryCaps() finds the scheme and port for that.
 bool handles(const QString &deviceName);
 QUrl baseUrl(const QString &deviceName);
 

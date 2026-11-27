@@ -5,6 +5,9 @@
 #include <QBuffer>
 #include <QElapsedTimer>
 #include <QEventLoop>
+#include <QHash>
+#include <QMutex>
+#include <QMutexLocker>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
@@ -24,7 +27,9 @@ struct Reply {
     int code = 0;            // HTTP status, 0 = no answer (network error)
     QByteArray body;
     QUrl location;
+    QUrl finalUrl;           // after redirects
     QString error;
+    bool timedOut = false;   // no answer at all: host asleep or out of reach
 };
 
 // One blocking HTTP request with timeout. Self-signed certificates of local
@@ -36,6 +41,16 @@ Reply request(QNetworkAccessManager &nam, const QByteArray &verb, const QUrl &ur
     QSslConfiguration ssl = QSslConfiguration::defaultConfiguration();
     ssl.setPeerVerifyMode(QSslSocket::VerifyNone);
     req.setSslConfiguration(ssl);
+    // Many printers redirect http:// to https://. Follow that for GET; the
+    // job requests then go straight to the resolved base URL.
+#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
+    req.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
+                     verb == "GET" ? QNetworkRequest::NoLessSafeRedirectPolicy
+                                   : QNetworkRequest::ManualRedirectPolicy);
+#else
+    if (verb == "GET")
+        req.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+#endif
     if (!body.isEmpty())
         req.setHeader(QNetworkRequest::ContentTypeHeader, QByteArray("text/xml"));
 
@@ -52,16 +67,19 @@ Reply request(QNetworkAccessManager &nam, const QByteArray &verb, const QUrl &ur
     QObject::connect(r, &QNetworkReply::finished, &loop, &QEventLoop::quit);
     timer.start(timeoutMs);
     loop.exec();
+    const bool timedOut = !timer.isActive();
     timer.stop();
 
     Reply out;
+    out.timedOut = timedOut;
+    out.finalUrl = r->url();
     out.code = r->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
     out.body = r->readAll();
     const QByteArray loc = r->rawHeader("Location");
     if (!loc.isEmpty())
         out.location = url.resolved(QUrl(QString::fromUtf8(loc)));
     if (r->error() != QNetworkReply::NoError && out.code == 0)
-        out.error = r->errorString();
+        out.error = timedOut ? QCoreApplication::translate("jScan", "no answer") : r->errorString();
     r->deleteLater();
     return out;
 }
@@ -102,41 +120,107 @@ void sleepMs(int ms, const std::atomic_bool &cancel)
         QThread::msleep(100);
 }
 
-} // namespace
 
-bool handles(const QString &deviceName)
-{
-    return deviceName.startsWith(QLatin1String("escl:http"));
-}
+// Base URLs that answered, per device name (all calls run in the worker thread,
+// the mutex is just cheap insurance).
+QMutex g_resolvedMutex;
+QHash<QString, QUrl> g_resolved;
 
-QUrl baseUrl(const QString &deviceName)
+QUrl withEsclPath(QUrl u)
 {
-    QUrl u(deviceName.mid(5));   // strip "escl:"
     QString path = u.path();
     if (!path.endsWith(QLatin1Char('/')))
         path += QLatin1Char('/');
-    if (!path.contains(QLatin1String("eSCL")))
+    if (!path.contains(QLatin1String("eSCL"), Qt::CaseInsensitive))
         path += QLatin1String("eSCL/");
     u.setPath(path);
     return u;
 }
 
+// Addresses to try for a device name. "escl:<url>" is used as given; a bare
+// host as typed in the settings ("192.168.1.20", "192.168.1.20:9095",
+// "printer.local/eSCL") is tried with the usual eSCL ports: https first
+// (HP, Canon, Epson), then plain http (Brother, Kyocera on 9095 …).
+QList<QUrl> candidates(const QString &deviceName)
+{
+    const QString in = deviceName.mid(5).trimmed();   // strip "escl:"
+    if (in.startsWith(QLatin1String("http://"), Qt::CaseInsensitive)
+        || in.startsWith(QLatin1String("https://"), Qt::CaseInsensitive))
+        return {withEsclPath(QUrl(in))};
+
+    const QUrl probe(QStringLiteral("http://") + in);
+    if (!probe.isValid() || probe.host().isEmpty())
+        return {};
+    auto make = [&](const char *scheme, int port) {
+        QUrl u(probe);
+        u.setScheme(QLatin1String(scheme));
+        u.setPort(port);
+        return withEsclPath(u);
+    };
+    if (probe.port() > 0)
+        return {make("https", probe.port()), make("http", probe.port())};
+    return {make("https", 443), make("http", 80), make("http", 9095), make("http", 8080)};
+}
+
+} // namespace
+
+bool handles(const QString &deviceName)
+{
+    return deviceName.startsWith(QLatin1String("escl:"));
+}
+
+QUrl baseUrl(const QString &deviceName)
+{
+    {
+        QMutexLocker lock(&g_resolvedMutex);
+        const auto it = g_resolved.constFind(deviceName);
+        if (it != g_resolved.constEnd())
+            return *it;
+    }
+    const QList<QUrl> c = candidates(deviceName);
+    return c.isEmpty() ? QUrl() : c.first();
+}
+
 QString queryCaps(const QString &deviceName, DeviceCaps *caps)
 {
     QNetworkAccessManager nam;
-    const QUrl base = baseUrl(deviceName);
+    const QList<QUrl> cand = candidates(deviceName);
+    if (cand.isEmpty())
+        return QCoreApplication::translate("jScan", "Invalid scanner address: %1").arg(deviceName.mid(5));
 
+    // Try every address; ride out Wi-Fi hiccups with a few rounds. A wrong
+    // port fails fast (refused, TLS error, HTTP 404/500), a scanner that is
+    // asleep or out of reach times out: then the other ports are skipped for
+    // this round, they would only time out as well.
     Reply r;
-    for (int attempt = 0; attempt < 4; ++attempt) {   // ride out Wi-Fi hiccups
-        r = request(nam, "GET", base.resolved(QUrl(QStringLiteral("ScannerCapabilities"))), {},
-                    15000);
-        if (r.code == 200)
-            break;
-        QThread::sleep(3);
+    QUrl base;
+    QStringList tried;
+    for (int attempt = 0; attempt < 4 && base.isEmpty(); ++attempt) {
+        if (attempt > 0)
+            QThread::sleep(3);
+        tried.clear();
+        for (const QUrl &b : cand) {
+            const QUrl url = b.resolved(QUrl(QStringLiteral("ScannerCapabilities")));
+            r = request(nam, "GET", url, {}, 15000);
+            if (r.code == 200 && r.body.contains("ScannerCapabilities")) {
+                // a redirect (http -> https) moves the base URL as well
+                base = r.finalUrl.isValid() ? r.finalUrl.resolved(QUrl(QStringLiteral("./"))) : b;
+                break;
+            }
+            tried << QStringLiteral("%1: %2").arg(
+                url.toString(),
+                r.error.isEmpty() ? QStringLiteral("HTTP %1").arg(r.code) : r.error);
+            if (r.timedOut)
+                break;
+        }
     }
-    if (r.code != 200)
+    if (base.isEmpty())
         return QCoreApplication::translate("jScan", "Network scanner is not responding (%1).")
-            .arg(r.error.isEmpty() ? QStringLiteral("HTTP %1").arg(r.code) : r.error);
+            .arg(tried.join(QStringLiteral("; ")));
+    {
+        QMutexLocker lock(&g_resolvedMutex);
+        g_resolved.insert(deviceName, base);
+    }
 
     bool platen = false, adf = false, duplex = false;
     QSet<QString> modes;

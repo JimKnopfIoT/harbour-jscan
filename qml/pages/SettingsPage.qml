@@ -79,11 +79,20 @@ Page {
             TextField {
                 width: parent.width
                 label: qsTr("IP address (eSCL/AirScan)")
-                placeholderText: qsTr("e.g. 192.168.1.20")
+                placeholderText: qsTr("e.g. 192.168.1.20 or http://192.168.1.20:9095")
                 text: scanner.networkHost
-                inputMethodHints: Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase
+                inputMethodHints: Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase | Qt.ImhUrlCharactersOnly
                 EnterKey.iconSource: "image://theme/icon-m-enter-accept"
-                EnterKey.onClicked: { scanner.networkHost = text; focus = false; scanner.refreshDevices() }
+                EnterKey.onClicked: focus = false
+                // also when leaving the field or the page without Enter
+                function commit() {
+                    if (text.trim() !== scanner.networkHost.trim()) {
+                        scanner.networkHost = text.trim()
+                        scanner.refreshDevices()
+                    }
+                }
+                onActiveFocusChanged: if (!activeFocus) commit()
+                Component.onDestruction: commit()
             }
 
             SectionHeader { text: qsTr("Saving") }

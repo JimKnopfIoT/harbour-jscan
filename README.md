@@ -63,7 +63,10 @@ scanned at 6400 dpi, saved as PDF.
 | Brother multifunction printer (model not reported) | Network (eSCL) |
 
 Network scanners are not discovered automatically on the phone: enter the
-scanner's IP address under Settings → Network scanner. Most network-capable
+scanner's IP address under Settings → Network scanner. The app tries the
+usual eSCL addresses by itself (https on port 443, http on ports 80, 9095 and
+8080); a port (`192.168.1.20:9095`) or a complete URL
+(`http://192.168.1.20:9095/eSCL`) can be given as well. Most network-capable
 multifunction printers of recent years offer eSCL/AirScan. Reports about
 further devices are welcome – please open an issue with the exact model.
 

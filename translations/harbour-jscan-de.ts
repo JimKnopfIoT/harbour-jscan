@@ -434,11 +434,11 @@
     </message>
     <message>
         <location line="+1"/>
-        <source>e.g. 192.168.1.20</source>
-        <translation>z. B. 192.168.1.20</translation>
+        <source>e.g. 192.168.1.20 or http://192.168.1.20:9095</source>
+        <translation>z. B. 192.168.1.20 oder http://192.168.1.20:9095</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+16"/>
         <source>Saving</source>
         <translation>Speichern</translation>
     </message>
@@ -476,12 +476,22 @@
 <context>
     <name>jScan</name>
     <message>
-        <location filename="../core/esclclient.cpp" line="+138"/>
+        <location filename="../core/esclclient.cpp" line="+82"/>
+        <source>no answer</source>
+        <translation>keine Antwort</translation>
+    </message>
+    <message>
+        <location line="+107"/>
+        <source>Invalid scanner address: %1</source>
+        <translation>Ungültige Scanner-Adresse: %1</translation>
+    </message>
+    <message>
+        <location line="+29"/>
         <source>Network scanner is not responding (%1).</source>
         <translation>Netzwerkscanner antwortet nicht (%1).</translation>
     </message>
     <message>
-        <location line="+121"/>
+        <location line="+125"/>
         <source>Sending job to network scanner …</source>
         <translation>Sende Auftrag an Netzwerkscanner …</translation>
     </message>
@@ -513,7 +523,7 @@
         <location line="+45"/>
         <location filename="../core/scanworker_sane.cpp" line="+565"/>
         <location filename="../core/v600scanner.cpp" line="-120"/>
-        <location filename="../src/scancontroller.cpp" line="+454"/>
+        <location filename="../src/scancontroller.cpp" line="+457"/>
         <source>Cancelled.</source>
         <translation>Abgebrochen.</translation>
     </message>
@@ -705,7 +715,7 @@
         <translation>Bildformat des Scanners wird nicht unterstützt.</translation>
     </message>
     <message>
-        <location filename="../src/scancontroller.cpp" line="-434"/>
+        <location filename="../src/scancontroller.cpp" line="-436"/>
         <source>Feeder – duplex</source>
         <translation>Einzug – beidseitig</translation>
     </message>
@@ -740,7 +750,7 @@
         <translation>Kartenschlitz – beidseitig</translation>
     </message>
     <message>
-        <location line="+77"/>
+        <location line="+79"/>
         <source>Network scanner (%1)</source>
         <translation>Netzwerkscanner (%1)</translation>
     </message>

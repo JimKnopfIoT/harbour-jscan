@@ -10,6 +10,7 @@
 #include <QSettings>
 #include <QStandardPaths>
 #include <QThreadPool>
+#include <QTimer>
 #include <QTransform>
 #include <QtConcurrent>
 #include <algorithm>
@@ -82,8 +83,11 @@ QStringList ScanController::devices() const
 
 void ScanController::refreshDevices()
 {
-    if (m_state != Idle)
+    if (m_state != Idle) {
+        m_refreshPending = true;   // e.g. new address while the old one is still queried
         return;
+    }
+    m_refreshPending = false;
     setState(Searching);
     QMetaObject::invokeMethod(m_worker, "listDevices", Qt::QueuedConnection);
 }
@@ -97,8 +101,7 @@ void ScanController::onDevices(const QList<ScanDevice> &found)
     if (!m_networkHost.trimmed().isEmpty()) {
         QString h = m_networkHost.trimmed();
         ScanDevice d;
-        d.name = h.startsWith(QLatin1String("http")) ? QStringLiteral("escl:") + h
-                                                     : QStringLiteral("escl:https://%1:443").arg(h);
+        d.name = QStringLiteral("escl:") + h;   // scheme/port are probed by Escl::queryCaps
         d.key = QStringLiteral("eSCL ") + h;
         d.label = QCoreApplication::translate("jScan", "Network scanner (%1)").arg(h);
         m_devices << d;
@@ -813,6 +816,13 @@ void ScanController::setState(State s)
         return;
     m_state = s;
     emit stateChanged();
+    if (s == Idle && m_refreshPending) {
+        // after the current handler is done (it may start the next step)
+        QTimer::singleShot(0, this, [this] {
+            if (m_refreshPending && m_state == Idle)
+                refreshDevices();
+        });
+    }
 }
 
 void ScanController::loadSettings()
